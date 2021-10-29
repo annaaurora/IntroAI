@@ -1,5 +1,6 @@
 import copy
 import itertools
+from os import remove
 
 
 class CSP:
@@ -115,7 +116,7 @@ class CSP:
         
         #velger en unassigned variable
         #hvis det ikke finnes noen er spillet ferdig 
-        var = self.select_unassigned_variable(self, assignment)
+        var = self.select_unassigned_variable(assignment)
         if var == None:
             return assignment
 
@@ -150,9 +151,9 @@ class CSP:
         #setter den bare til None først
         unasigned_variable = None
         #iterere gjennom variablene i assignment  
-        for variable in assignment:
+        for variable,value in assignment.items():
             #hvis det finnes mer enn 1 lovlig verdi 
-            if len(self.domains(variable)) > 1:
+            if len(value) > 1:
                 #tar bare den første vi finner 
                 unasigned_variable = variable 
         #returnerer 
@@ -197,21 +198,28 @@ class CSP:
         between i and j, the value should be deleted from i's list of
         legal values in 'assignment'.
         """
-        #glemte litt jeg skulle følge pseudokoden men d funker håper jeg
+        
         #har ikke revised enda
         revised = False
-        #liste med lovlige verdier for i sammen med j
-        legal_i_with_j = []
-        for i,j in self.constraints[i][j]:
-            legal_i_with_j.append(i)
-
-        #iterere gjennom lovlige verdier for i og sjekke om de finnes i listen 
-        #for lovlige verdier med i og j sammen
+        
+        #itererer gjennom alle de lovlige verdiene til i 
         for value in assignment[i]:
-            if value not in legal_i_with_j:
-                assignment[i].remove(value)
+            #alle de mulige parene med en lovlig verdi til i og alle de lovlige verdiene til j
+            arcs = list(self.get_all_possible_pairs(value, assignment[j]))
+            not_legal_value = True
+            #sjekker for alle mulige par om det er et lovlig par
+            for arc in arcs:
+                if arc in self.constraints[i][j]:
+                    not_legal_value = False
+            
+            #det var ikke lovlig, så må fjerne "lovlige" verdien til i
+            if not_legal_value:
                 revised = True
+                assignment[i].remove(value)
+
         return revised
+
+
         
 
     
