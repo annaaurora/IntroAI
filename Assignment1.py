@@ -108,8 +108,36 @@ class CSP:
         assignments and inferences that took place in previous
         iterations of the loop.
         """
-        # TODO: IMPLEMENT THIS
-        pass
+
+        #returnerer enten løsnigen eller failure
+
+        
+        
+        #velger en unassigned variable
+        #hvis det ikke finnes noen er spillet ferdig 
+        var = self.select_unassigned_variable(self, assignment)
+        if var == None:
+            return assignment
+
+        #går gjennom alle verdier i domain til variablen var setter de til value
+        for value in assignment[var]:
+            
+            #deep copy opplegget
+            assignment_kopi = copy.deepcopy(assignment)
+            assignment_kopi[var] = [value]
+
+            #arcs e liste med tuples for alle nabo-arcs til var 
+            arcs = self.get_all_neighboring_arcs(var)
+            if self.inference(assignment_kopi, arcs):
+                #inference returnerer true hvis true for arcs og da backtracker vi rekursivt 
+                result = self.backtrack(assignment_kopi)
+                if result: 
+                    return result
+
+        #hvis den failer
+        return {}
+
+
 
     def select_unassigned_variable(self, assignment):
         """The function 'Select-Unassigned-Variable' from the pseudocode
@@ -117,8 +145,20 @@ class CSP:
         in 'assignment' that have not yet been decided, i.e. whose list
         of legal values has a length greater than one.
         """
-        # TODO: IMPLEMENT THIS
-        pass
+        #skal returnere en eller annen unasigned value
+        #altså en variabel i assignment som har en liste med lovlige verdier som er flere enn en
+        #setter den bare til None først
+        unasigned_variable = None
+        #iterere gjennom variablene i assignment  
+        for variable in assignment:
+            #hvis det finnes mer enn 1 lovlig verdi 
+            if len(self.domains(variable)) > 1:
+                #tar bare den første vi finner 
+                unasigned_variable = variable 
+        #returnerer 
+        return unasigned_variable 
+        #og vil returnere None hvis det ikke er noen unasigned variable, altså når spillet er ferdig (?)
+
 
     def inference(self, assignment, queue):
         """The function 'AC-3' from the pseudocode in the textbook.
@@ -126,8 +166,27 @@ class CSP:
         the lists of legal values for each undecided variable. 'queue'
         is the initial queue of arcs that should be visited.
         """
-        # TODO: IMPLEMENT THIS
-        pass
+        #her har jeg fulgt pseudokoden til punkt og prikke! flinke meg
+        #skal returnere false hvis incosistency is found or true hvis ikke
+        #while det fortsatt er nokke i køen
+        while queue:
+            i, j = queue.pop(0)
+
+            #revise returerer bare true hvis den reviser, altså finner noe feil og endrer d
+            if self.revise(assignment, i, j):
+                #ikke noen flere legal values for i, returner false
+                if not assignment[i]:
+                    #returnerer false bc inconsistency er found
+                    return False
+
+                #så iterer gjennom alle nabo-arc til i og legg de til i kø, altså de arc som skal sjekkes
+                for nabo, var in self.get_all_neighboring_arcs(i):
+                    if nabo != j:
+                        queue.append((nabo,i))
+        
+        return True
+
+                 
 
     def revise(self, assignment, i, j):
         """The function 'Revise' from the pseudocode in the textbook.
@@ -138,10 +197,24 @@ class CSP:
         between i and j, the value should be deleted from i's list of
         legal values in 'assignment'.
         """
-        # TODO: IMPLEMENT THIS
-        pass
+        #glemte litt jeg skulle følge pseudokoden men d funker håper jeg
+        #har ikke revised enda
+        revised = False
+        #liste med lovlige verdier for i sammen med j
+        legal_i_with_j = []
+        for i,j in self.constraints[i][j]:
+            legal_i_with_j.append(i)
 
+        #iterere gjennom lovlige verdier for i og sjekke om de finnes i listen 
+        #for lovlige verdier med i og j sammen
+        for value in assignment[i]:
+            if value not in legal_i_with_j:
+                assignment[i].remove(value)
+                revised = True
+        return revised
+        
 
+    
 def create_map_coloring_csp():
     """Instantiate a CSP representing the map coloring problem from the
     textbook. This can be useful for testing your CSP solver as you
@@ -202,3 +275,15 @@ def print_sudoku_solution(solution):
         print("")
         if row == 2 or row == 5:
             print('------+-------+------')
+
+def main():
+    name_to_path = {'Easy': 'easy.txt', 'Medium' : 'medium.txt', 'Hard' : 'hard.txt', 'Very Hard' : 'veryhard.txt'}
+    for name in name_to_path:
+        curr_file = name_to_path[name]
+        csp = create_sudoku_csp(curr_file)
+        result = csp.backtracking_search()
+        print(f'{name}:')
+        print_sudoku_solution(result)
+
+
+main()
